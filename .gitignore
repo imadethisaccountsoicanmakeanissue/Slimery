@@ -1,4 +1,5 @@
-
+build/
+dist/
 *.spec
 build/__main__/__main__.exe.manifest
 build/__main__/__main__.pkg
