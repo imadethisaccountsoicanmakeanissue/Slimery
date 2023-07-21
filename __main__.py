@@ -18,6 +18,7 @@ class Box(pygame.sprite.Sprite):
         self.rect.height = h
 
 
+
     def draw(self, surface, cx, cy):
         """ Draw on surface """
         surface.blit(self.image, (self.rect.x - cx + 250, self.rect.y - cy + 250))
@@ -37,19 +38,30 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = y
         self.jumping = False
         self.canJump = False
+        self.holdjump = False
+        self.stackjump = 1
     def handle_keys(self):
         """ Handles Keys """
         key = pygame.key.get_pressed()
         dist = 1 # distance moved in 1 frame, try changing it to 5
         if key[pygame.K_UP]: # up key
             onground = pygame.sprite.spritecollideany(self, boxes)
+            maxjump = -40
             if self.jumping and onground:
                 self.jumping = False
-            if self.canJump:
-                
-                self.jumping = True
-                self.movey = -10
-
+            if self.canJump or self.holdjump:
+                if not self.jumping:
+                    self.jumping = True
+                    self.canJump = False
+                    self.holdjump = True
+                    self.stackjump = -40
+                else:
+                    if self.stackjump < maxjump and self.holdjump:
+                        self.stackjump = self.stackjump - 1
+                        self.movey = self.stackjump
+                        
+        else:
+            self.holdjump = False
         if key[pygame.K_RIGHT]: # right key
             self.movex += dist # move right
         elif key[pygame.K_LEFT]: # left key
@@ -62,7 +74,7 @@ class Player(pygame.sprite.Sprite):
 
 
     def update(self, floors):
-        """ Move the player. """
+        """ Move the player."""
         self.rect.x += self.movex
         self.rect.y += self.movey
         
@@ -70,7 +82,7 @@ class Player(pygame.sprite.Sprite):
         onground = pygame.sprite.spritecollideany(self, boxes)
         if self.jumping and onground:
                 self.jumping = False
-        print(self.jumping, onground, self.canJump)
+        print(self.jumping, onground, self.canJump, self.holdjump)
         if onground:
             self.canJump = True
             if not self.jumping:
@@ -82,7 +94,7 @@ class Player(pygame.sprite.Sprite):
             self.movex -= 0.5
         elif self.movex < 0 and not self.movex == 0:
             self.movex += 0.5
-        if not onground:
+        if not onground and not self.holdjump:
             self.movey += 0.5
         else:
             self.movey = 0
@@ -118,8 +130,8 @@ while not exit:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit = True
-    camerax = player.rect.x - camerax / 8
-    cameray = player.rect.y - cameray / 8
+    camerax += player.rect.x - camerax
+    cameray += player.rect.y - cameray 
     player.handle_keys() # handle the keys
 
     player.update(boxes) # update the player position
