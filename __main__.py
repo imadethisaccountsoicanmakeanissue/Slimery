@@ -1,7 +1,9 @@
 import pygame
+import numpy
+import math
 
 class Box(pygame.sprite.Sprite):
-    def __init__(self, x, y, l, t, w, h):
+    def __init__(self, x, y, w, h):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((w, h))
         self.image.fill((0, 255, 0))
@@ -12,8 +14,6 @@ class Box(pygame.sprite.Sprite):
         self.frame = 0 # count frames
         self.rect.x = x
         self.rect.y = y
-        self.rect.left = l
-        self.rect.top = t
         self.rect.width = w
         self.rect.height = h
 
@@ -36,82 +36,70 @@ class Player(pygame.sprite.Sprite):
         self.frame = 0 # count frames
         self.rect.x = x
         self.rect.y = y
-        self.jumping = False
-        self.canJump = False
-        self.holdjump = False
-        self.frames = 0
-    def handle_keys(self):
-        """ Handles Keys """
-        key = pygame.key.get_pressed()
-        dist = 1 # distance moved in 1 frame, try changing it to 5
-        if key[pygame.K_UP]: # up key
-            onground = pygame.sprite.spritecollideany(self, boxes)
-            maxjump = -40
-            if self.jumping and onground:
-                self.jumping = False
-            if self.canJump or self.holdjump:
-                if not self.jumping:
-                    self.movey = -10
-                    self.jumping = True
-                    self.canJump = False
-                    self.holdjump = True
-                    self.frames = 40
-                    
-                    
+        self.facing_left = False
 
-                        
-                        
-        else:
-            self.holdjump = False
-        if key[pygame.K_RIGHT]: # right key
-            self.movex += dist # move right
-        elif key[pygame.K_LEFT]: # left key
-            self.movex -= dist # move left
+        self.speed = 4
+        self.jumpspeed = 20
+        self.vsp = 0
+        self.gravity = 1
+        self.min_jumpspeed = 4
+        self.prev_key = pygame.key.get_pressed()
 
     def draw(self, surface, cx, cy):
         """ Draw on surface """
         surface.blit(self.image, (self.rect.x - cx + 250, self.rect.y - cy + 250))
 
+    def update(self, boxes):
+        hsp = 0
+        onground = self.check_collision(0, 1, boxes)
+        # check keys
+        key = pygame.key.get_pressed()
+        if key[pygame.K_LEFT]:
+            self.facing_left = True
+            hsp = -self.speed
+        elif key[pygame.K_RIGHT]:
+            self.facing_left = False
+            hsp = self.speed
+
+        if key[pygame.K_UP] and onground:
+            self.vsp = -self.jumpspeed
+
+        # variable height jumping
+        if self.prev_key[pygame.K_UP] and not key[pygame.K_UP]:
+            if self.vsp < -self.min_jumpspeed:
+                self.vsp = -self.min_jumpspeed
+
+        self.prev_key = key
+
+        # gravity
+        if self.vsp < 10 and not onground:  # 9.8 rounded up
+            self.vsp += self.gravity
+
+        if onground and self.vsp > 0:
+            self.vsp = 0
+
+        # movement
+        self.move(hsp, self.vsp, boxes)
     
 
-    def update(self, floors):
-        """ Move the player."""
-        self.rect.x += self.movex
-        self.rect.y += self.movey
-        print(self.frames)
-        # Check for collison
-        iscolliding = pygame.sprite.spritecollideany(self, boxes)
-        if self.jumping and onground:
-                self.jumping = False
-        if onground:
-            self.canJump = True
-            if not self.jumping:
-                self.rect.y -= 1
-            self.jumping = False
-        else:
-            self.canJump = False
-        if self.movex > 0 and not self.movex == 0:
-            self.movex -= 0.5
-        elif self.movex < 0 and not self.movex == 0:
-            self.movex += 0.5
-        if not iscolliding:
-            self.movey += 0.5
-        else:
-            self.movey = 0
-        if self.frames > 0:
-            self.frames -= 1
-            if self.frames == 0:
-                self.jumping = False
-                self.canJump = False
-                self.holdjump = False
-        if self.movex > 5:
-            self.movex = 5
-        elif self.movex < -5:
-            self.movex = -5
-        if self.movey > 5:
-            self.movey = 5
-        elif self.movey < -5:
-            self.movey = -5
+    def move(self, x, y, boxes):
+        dx = x
+        dy = y
+
+        while self.check_collision(0, dy, boxes):
+            dy -= numpy.sign(dy)
+
+        while self.check_collision(dx, dy, boxes):
+            dx -= numpy.sign(dx)
+
+        self.rect.move_ip([dx, dy])
+
+    def check_collision(self, x, y, grounds):
+        self.rect.move_ip([x, y])
+        collide = pygame.sprite.spritecollideany(self, grounds)
+        self.rect.move_ip([-x, -y])
+        return collide
+        
 
 
 pygame.init()
@@ -126,10 +114,24 @@ pygame.display.set_icon(icon)
 pygame.display.set_caption("Slimery")
 exit = False
 
-player = Player(-10, 0)
+player = Player(-10, -100)
 clock = pygame.time.Clock()
 boxes = pygame.sprite.Group()
-boxes.add(Box(-10, 80, -100, 100, 800, 100))
+for bx in range(0,800,100):
+        boxes.add(Box(bx,400, 100, 100))
+def tileBackground(screen: pygame.display, image: pygame.Surface) -> None:
+    screenWidth, screenHeight = screen.get_size()
+    imageWidth, imageHeight = image.get_size()
+    
+    # Calculate how many tiles we need to draw in x axis and y axis
+    tilesX = math.ceil(screenWidth / imageWidth)
+    tilesY = math.ceil(screenHeight / imageHeight)
+    
+    # Loop over both and blit accordingly
+    for x in range(tilesX):
+        for y in range(tilesY):
+            screen.blit(image, (x * imageWidth, y * imageHeight))
+
 camerax = 0
 cameray = 0
 while not exit:
@@ -137,7 +139,6 @@ while not exit:
         if event.type == pygame.QUIT:
             exit = True
     
-    player.handle_keys() # handle the keys
 
     player.update(boxes) # update the player position
     camerax += ((player.rect.x - camerax) / 4)
