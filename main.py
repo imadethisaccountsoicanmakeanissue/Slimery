@@ -179,6 +179,10 @@ while not exit:
         boxes.empty()
         boxes = None
         boxes = load(player, resource_path("level2.txt"))
+    if key[pygame.K_q]:
+        boxes.empty()
+        boxes = None
+        boxes = load(player, input("Enter level name:"))
     
 
     player.update(boxes) # update the player position
