@@ -2,21 +2,20 @@ import pygame
 import numpy
 import math
 import os 
-import sys
 CAMERAA = 350
 CAMERAB = 350
-VERSION = "ALPHAv0.9"
-
+VERSION = "ALPHAv1.4"
 ### Use this function To attach files to the exe file (eg - png, txt, jpg etc) using pyinstaller
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
+def resource_path(relative):
+    return os.path.join(
+        os.environ.get(
+            "_MEIPASS2",
+            os.path.abspath(".")
+        ),
+        relative
+    )
+#preload
 
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        base_path = sys._MEIPASS
-    else:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
 class Box(pygame.sprite.Sprite):
     def __init__(self, x, y, w, h, t):
         pygame.sprite.Sprite.__init__(self)
@@ -125,6 +124,10 @@ pygame.init()
 # CREATING CANVAS
 print(VERSION)
 canvas = pygame.display.set_mode((700, 700))
+print(resource_path("level1.txt"))
+print(resource_path("level2.txt"))
+print(resource_path("icon.png"))
+print(resource_path("grass.png"))
 icon = pygame.image.load(resource_path("icon.png"))
 
 pygame.display.set_icon(icon)
@@ -132,13 +135,10 @@ pygame.display.set_icon(icon)
 # TITLE OF CANVAS
 pygame.display.set_caption("Slimery")
 exit = False
-# Hey pyinstaller guess what
-resource_path("level1.txt")
-resource_path("level2.txt")
 
 def load(player: Player, level: str):
     boxes = pygame.sprite.Group()
-    map = [name.strip("\n") for name in open(resource_path(level+".txt"), "r")]
+    map = [name.strip("\n") for name in open(level, "r")]
     for by in range(0,len(map),1):
             for bx in range(0, len(map[by]), 1):
                 if map[by][bx] == "G":
@@ -164,7 +164,7 @@ camerax = 0
 cameray = 0
 player = Player(-10, -100)
 clock = pygame.time.Clock()
-boxes = load(player, "level1")
+boxes = load(player, resource_path("level1.txt"))
 font = pygame.font.SysFont("Arial", 36)
 while not exit:
     for event in pygame.event.get():
@@ -174,11 +174,11 @@ while not exit:
     if key[pygame.K_1]:
         boxes.empty()
         boxes = None
-        boxes = load(player, "level1")
+        boxes = load(player, resource_path("level1.txt"))
     if key[pygame.K_2]:
         boxes.empty()
         boxes = None
-        boxes = load(player, "level2")
+        boxes = load(player, resource_path("level2.txt"))
     
 
     player.update(boxes) # update the player position
