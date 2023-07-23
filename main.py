@@ -5,7 +5,7 @@ import os
 import sys
 CAMERAA = 350
 CAMERAB = 350
-VERSION = "ALPHAv0.7"
+VERSION = "ALPHAv0.9"
 
 ### Use this function To attach files to the exe file (eg - png, txt, jpg etc) using pyinstaller
 def resource_path(relative_path):
@@ -132,11 +132,13 @@ pygame.display.set_icon(icon)
 # TITLE OF CANVAS
 pygame.display.set_caption("Slimery")
 exit = False
-
+# Hey pyinstaller guess what
+resource_path("level1.txt")
+resource_path("level2.txt")
 
 def load(player: Player, level: str):
     boxes = pygame.sprite.Group()
-    map = [name.strip("\n") for name in open(level+".txt", "r")]
+    map = [name.strip("\n") for name in open(resource_path(level+".txt"), "r")]
     for by in range(0,len(map),1):
             for bx in range(0, len(map[by]), 1):
                 if map[by][bx] == "G":
