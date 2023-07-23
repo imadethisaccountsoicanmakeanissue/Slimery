@@ -3,6 +3,9 @@ import numpy
 import math
 import os 
 import sys
+CAMERAA = 350
+CAMERAB = 350
+VERSION = "ALPHAv0.7"
 
 ### Use this function To attach files to the exe file (eg - png, txt, jpg etc) using pyinstaller
 def resource_path(relative_path):
@@ -15,10 +18,10 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 class Box(pygame.sprite.Sprite):
-    def __init__(self, x, y, w, h):
+    def __init__(self, x, y, w, h, t):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((w, h))
-        self.image = pygame.image.load(resource_path("grass.png"))
+        self.image = pygame.image.load(resource_path(t+".png"))
         self.image = pygame.transform.scale(self.image, (w, h))
         self.rect = self.image.get_rect()
         self.rect.center = (250, 250)
@@ -34,13 +37,14 @@ class Box(pygame.sprite.Sprite):
 
     def draw(self, surface, cx, cy):
         """ Draw on surface """
-        surface.blit(self.image, (self.rect.x - cx + 250, self.rect.y - cy + 250))
+        surface.blit(self.image, (self.rect.x - cx + CAMERAA, self.rect.y - cy + CAMERAB))
+
 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((50, 50))
+        self.image = pygame.Surface((64, 64))
         self.image.fill((255, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.center = (250, 250)
@@ -60,7 +64,7 @@ class Player(pygame.sprite.Sprite):
 
     def draw(self, surface, cx, cy):
         """ Draw on surface """
-        surface.blit(self.image, (self.rect.x - cx + 250, self.rect.y - cy + 250))
+        surface.blit(self.image, (self.rect.x - cx + CAMERAA, self.rect.y - cy + CAMERAB))
 
     def update(self, boxes):
         hsp = 0
@@ -110,6 +114,7 @@ class Player(pygame.sprite.Sprite):
     def check_collision(self, x, y, grounds):
         self.rect.move_ip([x, y])
         collide = pygame.sprite.spritecollideany(self, grounds)
+        
         self.rect.move_ip([-x, -y])
         return collide
         
@@ -118,7 +123,8 @@ class Player(pygame.sprite.Sprite):
 pygame.init()
 
 # CREATING CANVAS
-canvas = pygame.display.set_mode((500, 500))
+print(VERSION)
+canvas = pygame.display.set_mode((700, 700))
 icon = pygame.image.load(resource_path("icon.png"))
 
 pygame.display.set_icon(icon)
@@ -127,27 +133,19 @@ pygame.display.set_icon(icon)
 pygame.display.set_caption("Slimery")
 exit = False
 
-player = Player(-10, -100)
-clock = pygame.time.Clock()
-boxes = pygame.sprite.Group()
-wh = 10
-map = [
-    [False, False, False, False, False, False, False, False, False, False],
-    [False, False, False, False, False, False, False, False, False, False],
-    [False, False, False, False, False, False, False, False, False, False],
-    [False, False, False, False, False, False, False, False, False, False],
-    [False, False, False, False, False, False, False, False, False, False],
-    [False, False, False, False, False, False, False, False, False, False],
-    [False, False, False, False, False, False, False, False, False, False],
-    [False, False, True, False, False, False, False, False, False, False],
-    [False, False, True, False, False, False, False, False, False, False],
-    [True, True, True, True, True, False, False, True, True, True, True],
-]
-for by in range(0,len(map),1):
-        for bx in range(0, len(map[by]), 1):
-            if map[by][bx]:
-                boxes.add(Box(bx*64,by*64, 64, 64))
-def tileBackground(screen: pygame.display, image: pygame.Surface) -> None:
+
+def load(player: Player, level: str):
+    boxes = pygame.sprite.Group()
+    map = [name.strip("\n") for name in open(level+".txt", "r")]
+    for by in range(0,len(map),1):
+            for bx in range(0, len(map[by]), 1):
+                if map[by][bx] == "G":
+                    boxes.add(Box(bx*64,by*64, 64, 64, "grass"))
+                elif map[by][bx] == "P":
+                    player.rect.x = bx * 64
+                    player.rect.y = by * 64
+    return boxes
+def tileBackground(screen: pygame.display, image: pygame.Surface, cx, cy) -> None:
     screenWidth, screenHeight = screen.get_size()
     imageWidth, imageHeight = image.get_size()
     
@@ -158,14 +156,27 @@ def tileBackground(screen: pygame.display, image: pygame.Surface) -> None:
     # Loop over both and blit accordingly
     for x in range(tilesX):
         for y in range(tilesY):
-            screen.blit(image, (x * imageWidth, y * imageHeight))
+            screen.blit(image, (x * imageWidth - cx + CAMERAA, y * imageHeight - cy + CAMERAB))
 
 camerax = 0
 cameray = 0
+player = Player(-10, -100)
+clock = pygame.time.Clock()
+boxes = load(player, "level1")
+font = pygame.font.SysFont("Arial", 36)
 while not exit:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit = True
+    key = pygame.key.get_pressed()
+    if key[pygame.K_1]:
+        boxes.empty()
+        boxes = None
+        boxes = load(player, "level1")
+    if key[pygame.K_2]:
+        boxes.empty()
+        boxes = None
+        boxes = load(player, "level2")
     
 
     player.update(boxes) # update the player position
@@ -175,8 +186,11 @@ while not exit:
     for box in boxes:
         box.draw(canvas, camerax, cameray)
     player.draw(canvas, cx=camerax, cy=cameray) # draw the player on the canvas
-
+    font = pygame.font.SysFont("Arial", 36)
+    txtsurf = font.render(str(round(clock.get_fps()))+"FPS", True, (0,0,0))
+    canvas.blit(txtsurf,(600 - txtsurf.get_width() // 2, 100 - txtsurf.get_height() // 2))
     pygame.display.update() # update the canvas
     clock.tick(60)
+    
 
 pygame.quit()
