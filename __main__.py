@@ -1,12 +1,24 @@
 import pygame
 import numpy
 import math
+import os 
+import sys
 
+### Use this function To attach files to the exe file (eg - png, txt, jpg etc) using pyinstaller
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 class Box(pygame.sprite.Sprite):
     def __init__(self, x, y, w, h):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((w, h))
-        self.image = pygame.image.load("grass.png")
+        self.image = pygame.image.load(resource_path("grass.png"))
         self.image = pygame.transform.scale(self.image, (w, h))
         self.rect = self.image.get_rect()
         self.rect.center = (250, 250)
@@ -107,7 +119,7 @@ pygame.init()
 
 # CREATING CANVAS
 canvas = pygame.display.set_mode((500, 500))
-icon = pygame.image.load("icon.png")
+icon = pygame.image.load(resource_path("icon.png"))
 
 pygame.display.set_icon(icon)
 
