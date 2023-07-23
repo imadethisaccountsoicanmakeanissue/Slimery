@@ -1,6 +1,8 @@
 build/
 dist/
 *.spec
+*.dll
+*.exe
 build/__main__/__main__.exe.manifest
 build/__main__/__main__.pkg
 build/__main__/Analysis-00.toc
