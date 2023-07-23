@@ -4,7 +4,7 @@ cd dist
 move main.exe ..
 cd ..
 move main.exe game
-butler push "/game/" marctho8/slimery:windows
+butler push "game/" marctho8/slimery:windows
 del game
 del dist
 del build
