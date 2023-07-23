@@ -6,7 +6,8 @@ class Box(pygame.sprite.Sprite):
     def __init__(self, x, y, w, h):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((w, h))
-        self.image.fill((0, 255, 0))
+        self.image = pygame.image.load("grass.png")
+        self.image = pygame.transform.scale(self.image, (w, h))
         self.rect = self.image.get_rect()
         self.rect.center = (250, 250)
         self.movex = 0 # move along X
@@ -117,8 +118,23 @@ exit = False
 player = Player(-10, -100)
 clock = pygame.time.Clock()
 boxes = pygame.sprite.Group()
-for bx in range(0,800,100):
-        boxes.add(Box(bx,400, 100, 100))
+wh = 10
+map = [
+    [False, False, False, False, False, False, False, False, False, False],
+    [False, False, False, False, False, False, False, False, False, False],
+    [False, False, False, False, False, False, False, False, False, False],
+    [False, False, False, False, False, False, False, False, False, False],
+    [False, False, False, False, False, False, False, False, False, False],
+    [False, False, False, False, False, False, False, False, False, False],
+    [False, False, False, False, False, False, False, False, False, False],
+    [False, False, True, False, False, False, False, False, False, False],
+    [False, False, True, False, False, False, False, False, False, False],
+    [True, True, True, True, True, False, False, True, True, True, True],
+]
+for by in range(0,len(map),1):
+        for bx in range(0, len(map[by]), 1):
+            if map[by][bx]:
+                boxes.add(Box(bx*64,by*64, 64, 64))
 def tileBackground(screen: pygame.display, image: pygame.Surface) -> None:
     screenWidth, screenHeight = screen.get_size()
     imageWidth, imageHeight = image.get_size()
