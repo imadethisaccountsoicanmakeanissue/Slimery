@@ -2,20 +2,31 @@ import pygame
 import numpy
 import math
 import os 
+import sys
+import time
 CAMERAA = 350
 CAMERAB = 350
 VERSION = "ALPHAv1.4"
+print('press 1 to load level1')
+print('press 2 to load level2')
+print('press q to load custom level')
+level = 1
 ### Use this function To attach files to the exe file (eg - png, txt, jpg etc) using pyinstaller
-def resource_path(relative):
-    return os.path.join(
-        os.environ.get(
-            "_MEIPASS2",
-            os.path.abspath(".")
-        ),
-        relative
-    )
-#preload
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
 
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+#preload
+loading = False
+def isloaded(level):
+    if os.path.exists(resource_path("level"+str(level)+".txt")):
+        return True
+    return False
 class Box(pygame.sprite.Sprite):
     def __init__(self, x, y, w, h, t):
         pygame.sprite.Sprite.__init__(self)
@@ -38,10 +49,32 @@ class Box(pygame.sprite.Sprite):
         """ Draw on surface """
         surface.blit(self.image, (self.rect.x - cx + CAMERAA, self.rect.y - cy + CAMERAB))
 
+class End(pygame.sprite.Sprite):
+    def __init__(self, x, y, w, h, t):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((w, h))
+        self.image = pygame.image.load(resource_path(t+".png"))
+        self.image = pygame.transform.scale(self.image, (w, h))
+        self.rect = self.image.get_rect()
+        self.rect.center = (250, 250)
+        self.movex = 0 # move along X
+        self.movey = 0 # move along Y
+        self.frame = 0 # count frames
+        self.rect.x = x
+        self.rect.y = y
+        self.rect.width = w
+        self.rect.height = h
 
+
+
+    def draw(self, surface, cx, cy):
+        """ Draw on surface """
+        surface.blit(self.image, (self.rect.x - cx + CAMERAA, self.rect.y - cy + CAMERAB))
 
 class Player(pygame.sprite.Sprite):
+    
     def __init__(self, x, y):
+
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((64, 64))
         self.image.fill((255, 0, 0))
@@ -60,6 +93,7 @@ class Player(pygame.sprite.Sprite):
         self.gravity = 1
         self.min_jumpspeed = 4
         self.prev_key = pygame.key.get_pressed()
+        self.cool = False
 
     def draw(self, surface, cx, cy):
         """ Draw on surface """
@@ -111,10 +145,17 @@ class Player(pygame.sprite.Sprite):
         self.rect.move_ip([dx, dy])
 
     def check_collision(self, x, y, grounds):
+        global level
+        global loading
         self.rect.move_ip([x, y])
         collide = pygame.sprite.spritecollideany(self, grounds)
-        
+        print(level)
+        if collide.__class__ == End:
+            if level != 0:
+                loading = True
+            
         self.rect.move_ip([-x, -y])
+        
         return collide
         
 
@@ -124,10 +165,6 @@ pygame.init()
 # CREATING CANVAS
 print(VERSION)
 canvas = pygame.display.set_mode((700, 700))
-print(resource_path("level1.txt"))
-print(resource_path("level2.txt"))
-print(resource_path("icon.png"))
-print(resource_path("grass.png"))
 icon = pygame.image.load(resource_path("icon.png"))
 
 pygame.display.set_icon(icon)
@@ -146,6 +183,11 @@ def load(player: Player, level: str):
                 elif map[by][bx] == "P":
                     player.rect.x = bx * 64
                     player.rect.y = by * 64
+                elif map[by][bx] == "E":
+                    boxes.add(End(bx*64,by*64, 64, 64, "grass"))
+                if map[by][bx] == "B":
+                    boxes.add(Box(bx*64,by*64, 64, 64, "bricks"))
+                
     return boxes
 def tileBackground(screen: pygame.display, image: pygame.Surface, cx, cy) -> None:
     screenWidth, screenHeight = screen.get_size()
@@ -172,20 +214,32 @@ while not exit:
             exit = True
     key = pygame.key.get_pressed()
     if key[pygame.K_1]:
+        level = 1
         boxes.empty()
         boxes = None
         boxes = load(player, resource_path("level1.txt"))
     if key[pygame.K_2]:
+        level = 2
         boxes.empty()
         boxes = None
         boxes = load(player, resource_path("level2.txt"))
     if key[pygame.K_q]:
+        level = 0
         boxes.empty()
         boxes = None
         boxes = load(player, input("Enter level name:"))
     
 
     player.update(boxes) # update the player position
+    if loading:
+        loading = False
+        level += 1
+        if isloaded(level):
+            boxes.empty()
+            boxes = None
+            boxes = load(player, resource_path("level"+str(level)+".txt"))
+        else:
+            level -= 1
     camerax += ((player.rect.x - camerax) / 4)
     cameray += ((player.rect.y - cameray) / 4)
     canvas.fill((178,255,255)) # fill the canvas with white color

@@ -1,4 +1,4 @@
-pyinstaller --onefile main.py
+pyinstaller main.spec
 mkdir game
 cd dist
 move main.exe ..
