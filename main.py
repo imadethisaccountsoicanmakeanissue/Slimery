@@ -163,27 +163,22 @@ def load(player: Player, level: str):
         level_data = f.read()
     level_data = level_data.split("\n")
     print(level_data)
-    for row in level_data:
-        rowr = row.split(" ")
+    for y, thingr in enumerate(level_data):
+        rowr = thingr.split(" ")
     
         #print(row)
-        for col in rowr:
-            if col == "00":
+        for x, thing in enumerate(rowr):
+            if thing == "00":
                 print()
-                rowr.remove(col)
-            elif col == "01":
-                boxes.add(Box(level_data.index(row)*64, rowr.index(col)*64, 64, 64, "grass"))
-                rowr.remove(col)
-            elif col == "02":
-                boxes.add(Box(level_data.index(row)*64, rowr.index(col)*64, 64, 64, "bricks"))
-                rowr.remove(col)
-            elif col == "03":
+            elif thing == "01":
+                boxes.add(Box(x*64, y*64, 64, 64, "grass"))
+            elif thing == "02":
+                boxes.add(Box(x*64, y*64, 64, 64, "bricks"))
+            elif thing == "03":
                 boxes.add(End(0, 0, 64, 64, "end"))
-                rowr.remove(col)
-            elif col == "04":
-                start = [level_data.index(row)*64, rowr.index(col)*64]
-                rowr.remove(col)
-            print(str(level_data.index(row)*64) + " " + str(rowr.index(col)*64)  )
+            elif thing == "04":
+                start = [x*64, y*64]
+            print(str(x*64) + " " + str(y*64)  )
 
 
     
@@ -200,21 +195,24 @@ def tileBackground(screen: pygame.display, image: pygame.Surface, cx, cy) -> Non
     for x in range(tilesX):
         for y in range(tilesY):
             screen.blit(image, (x * imageWidth - cx + CAMERAA, y * imageHeight - cy + CAMERAB))
-start = (0, 0)
 camerax = 0
 cameray = 0
+boxes = None
+start=[]
 player = Player(-10, -100)
 clock = pygame.time.Clock()
-boxes, start = load(player, resource_path("level1.txt"))
 font = pygame.font.SysFont("Arial", 36)
+
 def loadup(levell):
+    global boxes, start, level
     level = levell
-    boxes.empty()
-    boxes = None
+    if boxes != None:
+        boxes.empty()
+        boxes = None
     boxes, start = load(player, resource_path("level"+str(levell)+".txt"))
     player.rect.x = start[0]
     player.rect.y = start[1]
-
+loading = [True, 1]
 while not exit:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -233,16 +231,16 @@ while not exit:
         player.rect.y = start[1]
     
 
-    player.update(boxes) # update the player position
-    if loading:
-        loading = False
-        level += 1
+    
+    if loading[0]:
+        loading[0] = False
+        ollevel = level
+        level = loading[1]
         if isloaded(level):
-            boxes.empty()
-            boxes = None
-            boxes = load(player, resource_path("level"+str(level)+".txt"))
+            loadup(1)
         else:
-            level -= 1
+            level = ollevel
+    player.update(boxes) # update the player position
     camerax += ((player.rect.x - camerax) / 4)
     cameray += ((player.rect.y - cameray) / 4)
     canvas.fill((178,255,255)) # fill the canvas with white color
