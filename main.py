@@ -6,7 +6,7 @@ import sys
 import time
 CAMERAA = 350
 CAMERAB = 350
-VERSION = "ALPHAv1.4"
+VERSION = "ALPHA v1.5 MAPOVERHAUL"
 print('press 1 to load level1')
 print('press 2 to load level2')
 print('press q to load custom level')
@@ -49,27 +49,8 @@ class Box(pygame.sprite.Sprite):
         """ Draw on surface """
         surface.blit(self.image, (self.rect.x - cx + CAMERAA, self.rect.y - cy + CAMERAB))
 
-class End(pygame.sprite.Sprite):
-    def __init__(self, x, y, w, h, t):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((w, h))
-        self.image = pygame.image.load(resource_path(t+".png"))
-        self.image = pygame.transform.scale(self.image, (w, h))
-        self.rect = self.image.get_rect()
-        self.rect.center = (250, 250)
-        self.movex = 0 # move along X
-        self.movey = 0 # move along Y
-        self.frame = 0 # count frames
-        self.rect.x = x
-        self.rect.y = y
-        self.rect.width = w
-        self.rect.height = h
-
-
-
-    def draw(self, surface, cx, cy):
-        """ Draw on surface """
-        surface.blit(self.image, (self.rect.x - cx + CAMERAA, self.rect.y - cy + CAMERAB))
+class End(Box):
+    thisisathing = True
 
 class Player(pygame.sprite.Sprite):
     
@@ -149,7 +130,6 @@ class Player(pygame.sprite.Sprite):
         global loading
         self.rect.move_ip([x, y])
         collide = pygame.sprite.spritecollideany(self, grounds)
-        print(level)
         if collide.__class__ == End:
             if level != 0:
                 loading = True
@@ -170,25 +150,44 @@ icon = pygame.image.load(resource_path("icon.png"))
 pygame.display.set_icon(icon)
 
 # TITLE OF CANVAS
-pygame.display.set_caption("Slimery")
+pygame.display.set_caption("py")
 exit = False
 
 def load(player: Player, level: str):
     boxes = pygame.sprite.Group()
-    map = [name.strip("\n") for name in open(level, "r")]
-    for by in range(0,len(map),1):
-            for bx in range(0, len(map[by]), 1):
-                if map[by][bx] == "G":
-                    boxes.add(Box(bx*64,by*64, 64, 64, "grass"))
-                elif map[by][bx] == "P":
-                    player.rect.x = bx * 64
-                    player.rect.y = by * 64
-                elif map[by][bx] == "E":
-                    boxes.add(End(bx*64,by*64, 64, 64, "grass"))
-                if map[by][bx] == "B":
-                    boxes.add(Box(bx*64,by*64, 64, 64, "bricks"))
-                
-    return boxes
+    # format = "00 00 00 00"
+    #          "01 01 01 01"
+    # load the level by reading the 2 letters then going a space then the two letters, etc
+    start= (0, 0)
+    with open(resource_path(level), "r") as f:
+        level_data = f.read()
+    level_data = level_data.split("\n")
+    print(level_data)
+    for row in level_data:
+        rowr = row.split(" ")
+    
+        #print(row)
+        for col in rowr:
+            if col == "00":
+                print()
+                rowr.remove(col)
+            elif col == "01":
+                boxes.add(Box(level_data.index(row)*64, rowr.index(col)*64, 64, 64, "grass"))
+                rowr.remove(col)
+            elif col == "02":
+                boxes.add(Box(level_data.index(row)*64, rowr.index(col)*64, 64, 64, "bricks"))
+                rowr.remove(col)
+            elif col == "03":
+                boxes.add(End(0, 0, 64, 64, "end"))
+                rowr.remove(col)
+            elif col == "04":
+                start = [level_data.index(row)*64, rowr.index(col)*64]
+                rowr.remove(col)
+            print(str(level_data.index(row)*64) + " " + str(rowr.index(col)*64)  )
+
+
+    
+    return (boxes, start)
 def tileBackground(screen: pygame.display, image: pygame.Surface, cx, cy) -> None:
     screenWidth, screenHeight = screen.get_size()
     imageWidth, imageHeight = image.get_size()
@@ -201,33 +200,37 @@ def tileBackground(screen: pygame.display, image: pygame.Surface, cx, cy) -> Non
     for x in range(tilesX):
         for y in range(tilesY):
             screen.blit(image, (x * imageWidth - cx + CAMERAA, y * imageHeight - cy + CAMERAB))
-
+start = (0, 0)
 camerax = 0
 cameray = 0
 player = Player(-10, -100)
 clock = pygame.time.Clock()
-boxes = load(player, resource_path("level1.txt"))
+boxes, start = load(player, resource_path("level1.txt"))
 font = pygame.font.SysFont("Arial", 36)
+def loadup(levell):
+    level = levell
+    boxes.empty()
+    boxes = None
+    boxes, start = load(player, resource_path("level"+str(levell)+".txt"))
+    player.rect.x = start[0]
+    player.rect.y = start[1]
+
 while not exit:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit = True
     key = pygame.key.get_pressed()
     if key[pygame.K_1]:
-        level = 1
-        boxes.empty()
-        boxes = None
-        boxes = load(player, resource_path("level1.txt"))
+        loadup(1)
     if key[pygame.K_2]:
-        level = 2
-        boxes.empty()
-        boxes = None
-        boxes = load(player, resource_path("level2.txt"))
+        loadup(2)
     if key[pygame.K_q]:
         level = 0
         boxes.empty()
         boxes = None
-        boxes = load(player, input("Enter level name:"))
+        boxes, start = load(player, input("Enter level name:"))
+        player.rect.x = start[0]
+        player.rect.y = start[1]
     
 
     player.update(boxes) # update the player position
