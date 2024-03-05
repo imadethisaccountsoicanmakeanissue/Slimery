@@ -1,9 +1,10 @@
-import pygame
 import numpy
+import pygame
 import math
 import os 
 import sys
-import time
+import asyncio
+import sys, platform
 CAMERAA = 350
 CAMERAB = 350
 VERSION = "ALPHA v1.5 MAPOVERHAUL"
@@ -11,6 +12,8 @@ print('press 1 to load level1')
 print('press 2 to load level2')
 print('press q to load custom level')
 level = 1
+if sys.platform == "emscripten":
+    platform.window.canvas.style.imageRendering = "pixelated"
 ### Use this function To attach files to the exe file (eg - png, txt, jpg etc) using pyinstaller
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -145,7 +148,7 @@ pygame.init()
 # CREATING CANVAS
 print(VERSION)
 canvas = pygame.display.set_mode((700, 700))
-icon = pygame.image.load(resource_path("icon.png"))
+icon = pygame.image.load(resource_path("img/icon.png"))
 
 pygame.display.set_icon(icon)
 
@@ -171,11 +174,11 @@ def load(player: Player, level: str):
             if thing == "00":
                 print()
             elif thing == "01":
-                boxes.add(Box(x*64, y*64, 64, 64, "grass"))
+                boxes.add(Box(x*64, y*64, 64, 64, "img/grass"))
             elif thing == "02":
-                boxes.add(Box(x*64, y*64, 64, 64, "bricks"))
+                boxes.add(Box(x*64, y*64, 64, 64, "img/bricks"))
             elif thing == "03":
-                boxes.add(End(0, 0, 64, 64, "end"))
+                boxes.add(End(0, 0, 64, 64, "img/end"))
             elif thing == "04":
                 start = [x*64, y*64]
             print(str(x*64) + " " + str(y*64)  )
@@ -252,6 +255,7 @@ while not exit:
     canvas.blit(txtsurf,(600 - txtsurf.get_width() // 2, 100 - txtsurf.get_height() // 2))
     pygame.display.update() # update the canvas
     clock.tick(60)
+    asyncio.sleep(0)
     
 
 pygame.quit()
