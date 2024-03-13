@@ -6,7 +6,7 @@ import sys
 import time
 CAMERAA = 350
 CAMERAB = 350
-VERSION = "ALPHA v1.5 MAPOVERHAUL"
+VERSION = "ALPHA v1.6"
 print('press 1 to load level1')
 print('press 2 to load level2')
 print('press q to load custom level')
@@ -22,7 +22,6 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 #preload
-loading = False
 def isloaded(level):
     if os.path.exists(resource_path("level"+str(level)+".txt")):
         return True
@@ -175,7 +174,7 @@ def load(player: Player, level: str):
             elif thing == "02":
                 boxes.add(Box(x*64, y*64, 64, 64, "bricks"))
             elif thing == "03":
-                boxes.add(End(0, 0, 64, 64, "end"))
+                boxes.add(End(x*64, y*64, 64, 64, "end"))
             elif thing == "04":
                 start = [x*64, y*64]
             print(str(x*64) + " " + str(y*64)  )
@@ -212,7 +211,8 @@ def loadup(levell):
     boxes, start = load(player, resource_path("level"+str(levell)+".txt"))
     player.rect.x = start[0]
     player.rect.y = start[1]
-loading = [True, 1]
+loadingb = True
+loadingl = 1
 while not exit:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -232,10 +232,10 @@ while not exit:
     
 
     
-    if loading[0]:
-        loading[0] = False
+    if loadingb == True:
+        loadingb = False
         ollevel = level
-        level = loading[1]
+        level = loadingl
         if isloaded(level):
             loadup(1)
         else:
