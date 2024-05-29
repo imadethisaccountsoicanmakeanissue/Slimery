@@ -142,5 +142,4 @@ dist/__main__/unicodedata.pyd
 dist/__main__/VCRUNTIME140.dll
 dist/__main__/zlib1.dll
 .vscode/settings.json
-findwhoasked.py
-editor.py
+dseksk.sh
